@@ -8,16 +8,17 @@ import { MyTicketsComponent } from './features/reporter/my-tickets.component.tsm
 import { TicketDetailComponent } from './features/tickets/ticket-detail.component';
 import { TechnicianTasksComponent } from './features/technician/technician-tasks.component';
 import { RegisterTechnicianComponent } from './features/admin/register-technician.component';
+import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'feed', pathMatch: 'full' },
+  { path: '', redirectTo: 'auth/login', pathMatch: 'full' },
   { path: 'auth/login', component: LoginComponent },
   { path: 'auth/register', component: RegisterComponent },
-  { path: 'feed', component: CampusFeedComponent },
-  { path: 'reporter/dashboard', component: MyTicketsComponent },
-  { path: 'reporter/create', component: CreateTicketComponent },
-  { path: 'tickets/:id', component: TicketDetailComponent },
-  { path: 'technician/tasks', component: TechnicianTasksComponent },
-  { path: 'admin/command-center', component: CommandCenterComponent },
-  { path: 'admin/technicians/new', component: RegisterTechnicianComponent }
-];
+  { path: 'feed', component: CampusFeedComponent, canActivate: [authGuard] },
+  { path: 'reporter/dashboard', component: MyTicketsComponent, canActivate: [authGuard], data: { roles: ['Reporter'] } },
+  { path: 'reporter/create', component: CreateTicketComponent, canActivate: [authGuard], data: { roles: ['Reporter'] } },
+  { path: 'tickets/:id', component: TicketDetailComponent, canActivate: [authGuard] },
+  { path: 'technician/tasks', component: TechnicianTasksComponent, canActivate: [authGuard], data: { roles: ['Technician'] } },
+  { path: 'admin/command-center', component: CommandCenterComponent, canActivate: [authGuard], data: { roles: ['Admin'] } },
+  { path: 'admin/technicians/new', component: RegisterTechnicianComponent, canActivate: [authGuard], data: { roles: ['Admin'] } }
+];
