@@ -1,45 +1,84 @@
+using FixMyCampus.Application.Common.Interfaces;
+using FixMyCampus.Domain.Entities;
+
 namespace FixMyCampus.Application.Services;
 
-public static class StatusService
+public class StatusService : IStatusService
 {
-    // Allowed transitions mapping
-    public static bool IsValidTransition(string currentStatus, string newStatus, string userRole, bool isAssignedTechnician)
+    private readonly IAppDbContext _context;
+
+    public StatusService(IAppDbContext context)
     {
-        // Normalize strings
-        currentStatus = currentStatus?.Trim() ?? "";
-        newStatus = newStatus?.Trim() ?? "";
+        _context = context;
+    }
 
-        // 1. New -> Assigned (Admin only)
-        if (currentStatus == "New" && newStatus == "Assigned")
+    public void ValidateTransition(Ticket ticket, string newStatus, User actor)
+    {
+        var current = ticket.Status;
+
+        // Rule 1: Admin assigns technician -> New to Assigned
+        if (current == "New" && newStatus == "Assigned")
         {
-            return userRole == "Admin";
+            if (actor.Role != "Admin")
+                throw new UnauthorizedAccessException("Only Admins can assign tickets.");
+            return;
         }
 
-        // 2. Assigned -> In Progress (Assigned Technician only)
-        if (currentStatus == "Assigned" && newStatus == "In Progress")
+        // Rule 2: Technician starts work -> Assigned to In Progress
+        if (current == "Assigned" && newStatus == "In Progress")
         {
-            return userRole == "Technician" && isAssignedTechnician;
+            if (actor.Role != "Technician" || ticket.AssignedTechnicianId != actor.Id)
+                throw new UnauthorizedAccessException("Only the assigned technician can start work on this ticket.");
+            return;
         }
 
-        // 3. In Progress -> Resolved (Assigned Technician only)
-        if (currentStatus == "In Progress" && newStatus == "Resolved")
+        // Rule 3: Technician finishes work -> In Progress to Resolved
+        if (current == "In Progress" && newStatus == "Resolved")
         {
-            return userRole == "Technician" && isAssignedTechnician;
+            if (actor.Role != "Technician" || ticket.AssignedTechnicianId != actor.Id)
+                throw new UnauthorizedAccessException("Only the assigned technician can resolve this ticket.");
+            return;
         }
 
-        // 4. Resolved -> Closed (Reporter only)
-        if (currentStatus == "Resolved" && newStatus == "Closed")
+        // Rule 4: Feedback Loop - Reporter confirms fix -> Resolved to Closed
+        if (current == "Resolved" && newStatus == "Closed")
         {
-            return userRole == "Reporter";
+            if (ticket.ReporterId != actor.Id)
+                throw new UnauthorizedAccessException("Only the original reporter can confirm the fix.");
+            return;
         }
 
-        // 5. Resolved -> In Progress (Reporter rejects fix, requires comment)
-        if (currentStatus == "Resolved" && newStatus == "In Progress")
+        // Rule 5: Feedback Loop - Reporter rejects fix -> Resolved to In Progress
+        if (current == "Resolved" && newStatus == "In Progress")
         {
-            return userRole == "Reporter";
+            if (ticket.ReporterId != actor.Id)
+                throw new UnauthorizedAccessException("Only the original reporter can reject the fix.");
+            return;
         }
 
-        // Any other transition is illegal (e.g., New -> Resolved, Closed -> New, etc.)
-        return false;
+        // ANY other transition is ILLEGAL (New -> Resolved, Assigned -> Resolved, Closed -> New, etc.)
+        throw new InvalidOperationException("Invalid ticket status transition.");
+    }
+
+    public async Task ApplyTransitionAsync(Ticket ticket, string newStatus, User actor, string? comment = null)
+    {
+        ValidateTransition(ticket, newStatus, actor);
+
+        var prevStatus = ticket.Status;
+        ticket.Status = newStatus;
+        ticket.UpdatedAt = DateTime.UtcNow;
+
+        // Automatically log audit timeline entry
+        _context.TicketHistories.Add(new TicketHistory
+        {
+            TicketId = ticket.Id,
+            ChangedById = actor.Id,
+            PreviousStatus = prevStatus,
+            NewStatus = newStatus,
+            Comment = comment ?? $"Status moved from {prevStatus} to {newStatus}",
+            CreatedAt = DateTime.UtcNow
+        });
+
+        await _context.SaveChangesAsync();
     }
 }
