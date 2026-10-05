@@ -45,7 +45,8 @@ public class AuthService : IAuthService
             Id = user.Id,
             Name = user.Name,
             Email = user.Email,
-            Role = user.Role
+            Role = user.Role,
+            Token = token
         };
 
         return (userDto, token);
@@ -67,7 +68,8 @@ public class AuthService : IAuthService
             Id = user.Id,
             Name = user.Name,
             Email = user.Email,
-            Role = user.Role
+            Role = user.Role,
+            Token = token
         };
 
         return (userDto, token);
@@ -89,4 +91,78 @@ public class AuthService : IAuthService
             Role = user.Role
         };
     }
+
+    public async Task<UserResponseDto> RegisterTechnicianAsync(RegisterTechnicianDto request)
+    {
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+
+        if (await _context.Users.AnyAsync(u => u.Email.ToLower() == normalizedEmail))
+        {
+            throw new ArgumentException("A user with this email already exists.");
+        }
+
+        var technician = new User
+        {
+            Name = request.Name.Trim(),
+            Email = normalizedEmail,
+            PasswordHash = _passwordHasher.HashPassword(request.Password),
+            Role = "Technician",
+            Specialty = request.Specialty?.Trim()
+        };
+
+        _context.Users.Add(technician);
+        await _context.SaveChangesAsync();
+
+        return new UserResponseDto
+        {
+            Id = technician.Id,
+            Name = technician.Name,
+            Email = technician.Email,
+            Role = technician.Role
+        };
+    }
+
+    public async Task<List<UserResponseDto>> GetTechniciansAsync()
+    {
+        return await _context.Users
+            .Where(u => u.Role == "Technician")
+            .Select(u => new UserResponseDto
+            {
+                Id = u.Id,
+                Name = u.Name,
+                Email = u.Email,
+                Role = u.Role
+            })
+            .ToListAsync();
+    }
+
+    public async Task<UserResponseDto> RegisterAdminAsync(RegisterAdminDto request)
+    {
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+
+        if (await _context.Users.AnyAsync(u => u.Email.ToLower() == normalizedEmail))
+        {
+            throw new ArgumentException("A user with this email already exists.");
+        }
+
+        var admin = new User
+        {
+            Name = request.Name.Trim(),
+            Email = normalizedEmail,
+            PasswordHash = _passwordHasher.HashPassword(request.Password),
+            Role = "Admin"
+        };
+
+        _context.Users.Add(admin);
+        await _context.SaveChangesAsync();
+
+        return new UserResponseDto
+        {
+            Id = admin.Id,
+            Name = admin.Name,
+            Email = admin.Email,
+            Role = admin.Role
+        };
+    }
+
 }
