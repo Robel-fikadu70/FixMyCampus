@@ -22,6 +22,8 @@ builder.Services.AddScoped<IAppDbContext>(provider =>
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<TicketService>(); 
+
 builder.Services.AddEndpointsApiExplorer();
 //Strict CORS (Required for cookies with AllowCredentials)
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
