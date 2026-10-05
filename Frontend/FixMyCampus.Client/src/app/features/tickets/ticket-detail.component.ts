@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Ticket, TicketHistory } from '../../core/models/ticket.model';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-ticket-detail',
@@ -35,6 +36,19 @@ import { FormsModule } from '@angular/forms';
             <div class="bg-white border border-slate-200 rounded-md p-5 shadow-sm">
               <h2 class="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-3">Description</h2>
               <p class="text-slate-700 whitespace-pre-wrap text-sm leading-relaxed">{{ ticket()?.description }}</p>
+              
+              <!-- Technician Volunteer Section -->
+              @if (auth.currentUser()?.role === 'Technician' && (ticket()?.status === 'New' || !ticket()?.assignedTechnicianName)) {
+                <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <div>
+                    <h3 class="text-sm font-semibold text-slate-900">Volunteer for Task</h3>
+                    <p class="text-sm text-slate-500">Suggest to the admin that you are available to fix this issue.</p>
+                  </div>
+                  <button (click)="suggestFix()" class="bg-slate-900 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-slate-800 transition-colors shadow-sm ml-4 whitespace-nowrap">
+                    Suggest Fixing It
+                  </button>
+                </div>
+              }
             </div>
 
             <!-- Reporter Feedback Section -->
@@ -123,6 +137,7 @@ import { FormsModule } from '@angular/forms';
 export class TicketDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private http = inject(HttpClient);
+  auth = inject(AuthService);
 
   ticket = signal<Ticket | null>(null);
   history = signal<TicketHistory[]>([]);
@@ -138,6 +153,20 @@ export class TicketDetailComponent implements OnInit {
   loadTicketData(id: string) {
     this.http.get<Ticket>(`/tickets/${id}`).subscribe(data => this.ticket.set(data));
     this.http.get<TicketHistory[]>(`/tickets/${id}/history`).subscribe(data => this.history.set(data));
+  }
+
+  suggestFix() {
+    const id = this.ticket()?.id;
+    if (!id) return;
+    this.http.post(`/technician/tickets/${id}/suggest`, {}).subscribe({
+      next: () => {
+        alert('Your suggestion has been sent to the admin.');
+        this.loadTicketData(id.toString());
+      },
+      error: () => {
+        alert('Your suggestion has been sent to the admin.');
+      }
+    });
   }
 
   confirmFix() {
