@@ -1,10 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using FixMyCampus.Domain.Entities;
-using FixMyCampus.Domain.Common;
-
+using FixMyCampus.Application.Common.Interfaces; 
 namespace FixMyCampus.Infrastructure.Persistence;
 
-public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options), IAppDbContext
 {
     public DbSet<User> Users => Set<User>();
     public DbSet<Building> Buildings => Set<Building>();
