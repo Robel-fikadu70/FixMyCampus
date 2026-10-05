@@ -13,76 +13,107 @@ import { FormsModule } from '@angular/forms';
     @if (ticket()) {
       <div class="max-w-4xl mx-auto px-4 py-8">
         <!-- Header -->
-        <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <span class="font-mono text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded">{{ ticket()?.ticketNumber }}</span>
-              <h1 class="text-2xl font-bold text-slate-900 mt-2">{{ ticket()?.title }}</h1>
+        <div class="mb-6 flex justify-between items-start">
+          <div>
+            <div class="flex items-center gap-3 mb-2">
+              <span class="font-mono text-sm text-slate-500 font-medium">Ticket {{ ticket()?.ticketNumber }}</span>
+              <span class="px-2 py-0.5 rounded text-xs font-medium uppercase tracking-wider border"
+                [class.bg-yellow-50]="ticket()?.status === 'New'" [class.text-yellow-700]="ticket()?.status === 'New'" [class.border-yellow-200]="ticket()?.status === 'New'"
+                [class.bg-blue-50]="ticket()?.status === 'In Progress' || ticket()?.status === 'Assigned'" [class.text-blue-700]="ticket()?.status === 'In Progress' || ticket()?.status === 'Assigned'" [class.border-blue-200]="ticket()?.status === 'In Progress' || ticket()?.status === 'Assigned'"
+                [class.bg-green-50]="ticket()?.status === 'Resolved'" [class.text-green-700]="ticket()?.status === 'Resolved'" [class.border-green-200]="ticket()?.status === 'Resolved'"
+                [class.bg-slate-50]="ticket()?.status === 'Closed'" [class.text-slate-600]="ticket()?.status === 'Closed'" [class.border-slate-200]="ticket()?.status === 'Closed'">
+                {{ ticket()?.status }}
+              </span>
             </div>
-            <span class="px-3 py-1.5 rounded-full text-sm font-semibold"
-              [class.bg-yellow-100]="ticket()?.status === 'New'" [class.text-yellow-800]="ticket()?.status === 'New'"
-              [class.bg-blue-100]="ticket()?.status === 'In Progress'" [class.text-blue-800]="ticket()?.status === 'In Progress'"
-              [class.bg-green-100]="ticket()?.status === 'Resolved'" [class.text-green-800]="ticket()?.status === 'Resolved'"
-              [class.bg-slate-100]="ticket()?.status === 'Closed'" [class.text-slate-800]="ticket()?.status === 'Closed'">
-              {{ ticket()?.status }}
-            </span>
-          </div>
-
-          <p class="text-slate-700 mb-6 bg-slate-50 p-4 rounded-lg border">{{ ticket()?.description }}</p>
-
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm border-t pt-4">
-            <div>
-              <span class="text-slate-400 block">Category</span>
-              <span class="font-medium text-slate-800">{{ ticket()?.category }}</span>
-            </div>
-            <div>
-              <span class="text-slate-400 block">Urgency</span>
-              <span class="font-medium text-slate-800">{{ ticket()?.urgency }}</span>
-            </div>
-            <div>
-              <span class="text-slate-400 block">Location</span>
-              <span class="font-medium text-slate-800">{{ ticket()?.buildingName ? ticket()?.buildingName + ' (' + ticket()?.roomNumber + ')' : ticket()?.specificLocation }}</span>
-            </div>
-            <div>
-              <span class="text-slate-400 block">Assigned Tech</span>
-              <span class="font-medium text-slate-800">{{ ticket()?.assignedTechnicianName || 'None' }}</span>
-            </div>
+            <h1 class="text-2xl font-semibold text-slate-900 tracking-tight">{{ ticket()?.title }}</h1>
           </div>
         </div>
 
-        <!-- Reporter Feedback Section (Only when status is Resolved) -->
-        @if (ticket()?.status === 'Resolved') {
-          <div class="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-6">
-            <h3 class="text-lg font-bold text-amber-900 mb-2">Issue Marked as Resolved</h3>
-            <p class="text-sm text-amber-700 mb-4">Please confirm if the fix was successful or reject it if the issue persists.</p>
-            
-            <div class="space-y-4">
-              <div>
-                <label class="block text-xs font-semibold uppercase text-amber-900 mb-1">Rejection Comment (Required if rejecting)</label>
-                <textarea [(ngModel)]="rejectComment" rows="2" class="w-full rounded-md border-amber-300 border p-2 text-sm" placeholder="Explain why the fix is unsatisfactory..."></textarea>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 space-y-6">
+            <!-- Details -->
+            <div class="bg-white border border-slate-200 rounded-md p-5 shadow-sm">
+              <h2 class="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-3">Description</h2>
+              <p class="text-slate-700 whitespace-pre-wrap text-sm leading-relaxed">{{ ticket()?.description }}</p>
+            </div>
+
+            <!-- Reporter Feedback Section -->
+            @if (ticket()?.status === 'Resolved') {
+              <div class="bg-white border-2 border-emerald-500 rounded-md p-5 shadow-sm">
+                <h3 class="text-base font-semibold text-emerald-900 mb-1 flex items-center gap-2">
+                  <svg class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                  Action Required: Confirm Resolution
+                </h3>
+                <p class="text-sm text-emerald-800 mb-4">The technician has marked this issue as resolved. Please verify the fix.</p>
+                
+                <div class="space-y-4">
+                  <div>
+                    <label class="block text-sm font-medium text-emerald-900 mb-1">Rejection Reason <span class="text-slate-500 font-normal">(only if rejecting)</span></label>
+                    <textarea [(ngModel)]="rejectComment" rows="2" class="w-full rounded-md border-emerald-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm p-2" placeholder="Explain why the issue persists..."></textarea>
+                  </div>
+                  <div class="flex space-x-3">
+                    <button (click)="confirmFix()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm">Confirm Fix</button>
+                    <button (click)="rejectFix()" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm">Reject</button>
+                  </div>
+                </div>
               </div>
-              <div class="flex space-x-4">
-                <button (click)="confirmFix()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Confirm & Close Fix</button>
-                <button (click)="rejectFix()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Reject Fix</button>
+            }
+
+            <!-- Audit Timeline -->
+            <div class="bg-white border border-slate-200 rounded-md p-5 shadow-sm">
+              <h3 class="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-5">Timeline</h3>
+              <div class="space-y-4">
+                @for (log of history(); track log.id; let last = $last) {
+                  <div class="flex gap-4">
+                    <div class="flex flex-col items-center">
+                      <div class="w-2.5 h-2.5 rounded-full bg-slate-300 mt-1.5"></div>
+                      @if (!last) { <div class="w-px h-full bg-slate-200 mt-2 mb-1"></div> }
+                    </div>
+                    <div class="pb-4">
+                      <div class="text-xs text-slate-500 mb-0.5">{{ log.timestamp | date:'MMM d, y, h:mm a' }}</div>
+                      <div class="text-sm text-slate-900"><span class="font-medium">{{ log.changedByName }}</span> updated status to <span class="font-medium">{{ log.newStatus }}</span></div>
+                      @if (log.comment) {
+                        <div class="mt-2 text-sm text-slate-600 bg-slate-50 border border-slate-200 p-3 rounded-md">{{ log.comment }}</div>
+                      }
+                    </div>
+                  </div>
+                } @empty {
+                  <p class="text-sm text-slate-500 italic">No timeline events recorded.</p>
+                }
               </div>
             </div>
           </div>
-        }
 
-        <!-- Audit Timeline -->
-        <div class="bg-white rounded-xl shadow-sm border p-6">
-          <h3 class="text-lg font-bold text-slate-800 mb-4">Ticket Audit History</h3>
-          <div class="space-y-6 border-l-2 border-slate-100 pl-4 ml-2">
-            @for (log of history(); track log.id) {
-              <div class="relative">
-                <div class="absolute -left-[21px] top-1.5 w-3 h-3 rounded-full bg-blue-600 ring-4 ring-white"></div>
-                <div class="text-xs text-slate-400 mb-0.5">{{ log.timestamp | date:'medium' }}</div>
-                <div class="text-sm font-medium text-slate-800">{{ log.changedByName }} changed status: <span class="text-blue-600">{{ log.previousStatus }} &rarr; {{ log.newStatus }}</span></div>
-                @if (log.comment) {
-                  <p class="text-sm text-slate-600 mt-1 bg-slate-50 p-2.5 rounded border">{{ log.comment }}</p>
-                }
-              </div>
-            }
+          <!-- Sidebar metadata -->
+          <div class="space-y-6">
+            <div class="bg-white border border-slate-200 rounded-md p-5 shadow-sm">
+              <h3 class="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-4">Ticket Details</h3>
+              <dl class="space-y-3 text-sm">
+                <div>
+                  <dt class="text-slate-500">Category</dt>
+                  <dd class="font-medium text-slate-900 mt-0.5">{{ ticket()?.category }}</dd>
+                </div>
+                <div>
+                  <dt class="text-slate-500">Urgency</dt>
+                  <dd class="font-medium text-slate-900 mt-0.5 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full" [class.bg-slate-400]="ticket()?.urgency === 'Low'" [class.bg-blue-500]="ticket()?.urgency === 'Medium'" [class.bg-orange-500]="ticket()?.urgency === 'High'" [class.bg-red-600]="ticket()?.urgency === 'Critical'"></span>
+                    {{ ticket()?.urgency }}
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-slate-500">Location</dt>
+                  <dd class="font-medium text-slate-900 mt-0.5">{{ ticket()?.buildingName ? ticket()?.buildingName + ' (' + ticket()?.roomNumber + ')' : ticket()?.specificLocation }}</dd>
+                </div>
+                <div class="pt-3 border-t border-slate-100">
+                  <dt class="text-slate-500">Reported By</dt>
+                  <dd class="font-medium text-slate-900 mt-0.5">{{ ticket()?.reporterName }}</dd>
+                </div>
+                <div>
+                  <dt class="text-slate-500">Assigned Technician</dt>
+                  <dd class="font-medium text-slate-900 mt-0.5">{{ ticket()?.assignedTechnicianName || 'Unassigned' }}</dd>
+                </div>
+              </dl>
+            </div>
           </div>
         </div>
       </div>
